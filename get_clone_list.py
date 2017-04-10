@@ -7,12 +7,15 @@ locus_AGI = "AT1G02850"
 
 base_url = 'http://www.arabidopsis.org/servlet/Search?type=dna&action=search'
 general_fields = {'pageNum': '1', 'search': 'Submit+Query', 'dna_type': 'clone',
-                  'type_1': 'locus', 'method_1': '2', 'term_1': 'AT1G02850', 'other_features':'is_abrc_stock'}
+                  'type_1': 'locus', 'method_1': '2', 'term_1': 'AT1G02850', 'other_features': 'is_abrc_stock'}
 
-a = requests.get(base_url, params=general_fields)
-#print(a.text)
-results = BeautifulSoup(a.text, 'html.parser')
+search_results = requests.get(base_url, params=general_fields)
+# load the results page into the html parser
+results = BeautifulSoup(search_results.text, 'html.parser')
+# get all rows from tables on the page
 t_rows = results.find_all('tr')
+
+# iterate thru rows to find the rows with available clones
 clone_links = {}
 for r in t_rows:
     rl = r.find('a')
@@ -23,7 +26,6 @@ for r in t_rows:
         # clone_links format {clone name: relative link to clone}
         clone_links[rl.text.strip('\xa0')] = rl.get('href')
 
-print(clone_links.keys())
 # remove CATMA clones
 remove_clones = []
 for k in clone_links.keys():
