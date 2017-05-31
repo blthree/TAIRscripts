@@ -10,23 +10,24 @@ def load_data(filename):
     records = {}
     for line in f:
         s_line = line.strip('\n').split('\t')
+        line_name = s_line[0].split('.')[0]
         poly_name = s_line[0]
         poly_chr = s_line[1].split(':')[0]
         poly_chr = poly_chr[3:]
-        poly_start = s_line[3].split('/')[1].split('-')[0]
-        poly_end = s_line[3].split('/')[1].split('-')[1]
+        poly_locs = s_line[3].split(',')[0]
+        poly_start = poly_locs.split('/')[1].split('-')[0]
+        poly_end = poly_locs.split('/')[1].split('-')[1]
         orientation = s_line[3].split('/')[0]
         # load into dict of dicts object
-        records[poly_name] = {'name':poly_name, 'chr':poly_chr, 'orientation':orientation, 'start':poly_start, 'end':poly_end}
+        records[line_name] = {'name': poly_name, 'chr': poly_chr, 'orientation': orientation, 'start': poly_start, 'end': poly_end}
     return records
 
 
 
 db = load_data(data_filename)
-print(db.get('SALK_147584.18.15.x'))
+print(db.get('SALK_092271'))
 genome = Fasta('AT9.fa')
-print(genome.keys())
-info = db.get('SALK_147584.18.15.x')
+info = db.get('SALK_147584')
 name = 'chr' + info['chr']
 print(name)
 print(genome[name][int(info['start']):int(info['end'])])
