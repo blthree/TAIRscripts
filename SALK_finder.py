@@ -92,5 +92,6 @@ priner3_primer_args = {
         'PRIMER_MAX_TEMPLATE_MISPRIMING_TH': 46
     }
 a = designPrimers(primer3_seq_args, priner3_primer_args)
+print(type(a))
 for k,v in a.items():
     print(k,v)
