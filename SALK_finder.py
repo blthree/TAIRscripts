@@ -23,6 +23,7 @@ primer3_seq_args = {
 }
 primer3_primer_args = {
     'PRIMER_TASK': 'generic',
+    'PRIMER_LIBERAL_BASE': 1,
     'PRIMER_NUM_RETURN': 1,
     'PRIMER_EXPLAIN_FLAG': 0,
     'PRIMER_OPT_SIZE': 21,
@@ -142,6 +143,7 @@ def get_seq(poly_entry):
         seq = -genome[chrom][new_start:new_end]
     else:
         raise ValueError("Orientation must be 'W' or 'C'!")
+    print(str(seq))
     return str(seq)
 
 def batch_process(db, out_file, number_to_make=1000, batch_size=100):
@@ -164,3 +166,18 @@ def batch_process(db, out_file, number_to_make=1000, batch_size=100):
 
 db = load_data(data_filenames)
 batch_process(db, 'primers.txt', number_to_make=len(db))
+
+
+def check_bases(seq):
+    # count occurence of each letter in the sequence
+    # easily check for ambiguous IUPAC symbols
+    # that primer3 doesn't like
+    # make sure to set the PRIMER_LIBERAL_BASE argument of primer3 to 1
+    letters = {}
+    for l in seq:
+        if l in letters.keys():
+            letters[l] += 1
+        else:
+            letters[l] = 1
+    print(letters)
+    return letters
