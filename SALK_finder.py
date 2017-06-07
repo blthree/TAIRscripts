@@ -130,7 +130,7 @@ def get_seq(poly_entry):
     total_bp = bp_upstream + bp_downstream
     chrom = 'chr' + poly_entry['chr']
     # logic to account for orientation of T-DNA insert
-
+    print('Getting sequence from ' + chrom) 
     if poly_entry['orientation'] == 'W':
         # need to handle overflow cases, should define chromsizes!
         new_start = max(1, int(poly_entry['start']) - bp_upstream)
@@ -150,16 +150,17 @@ def batch_process(db, out_file, number_to_make=1000, batch_size=100):
     for i in range(0, number_to_make):
         stock_num = list(db.keys())[i]
         for poly_name, poly_info in db[stock_num].items():
+            print('Making primers for ' + poly_name)
             result = make_primers(get_seq(poly_info))
             result['poly_name'] = poly_name
             primer_write_buffer.append(result)
         # write to file and clear buffer after every batch_size items
         if i % batch_size == 0:
-            if i == 0:
+            if i != 0:
                 for primer_pair in primer_write_buffer:
                     f.write("\t".join([str(v) for v in primer_pair.values()])+'\n')
                 primer_write_buffer = []
                 print('Wrote ' + str(batch_size) + ' primers to file: ' + out_file)
 
 db = load_data(data_filenames)
-batch_process(db, 'primers.txt')
+batch_process(db, 'primers.txt', number_to_make=len(db))
