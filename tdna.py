@@ -40,6 +40,7 @@ def load_data(filenames):
     return records
 
 db = load_data(data_filenames)
+print(db.get('SALK_001127'))
 
 
 

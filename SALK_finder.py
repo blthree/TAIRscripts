@@ -1,97 +1,166 @@
 from pyfaidx import Fasta
 from primer3.bindings import designPrimers
+from time import sleep
 
-data_filename = 'data/T-DNA.salk.tab'
+data_filenames = ['data/T-DNA.salk.tab', 'data/T-DNA.sail.tab', 'data/T-DNA.gk.tab']
 # http://signal.salk.edu/database/transcriptome/AT9.fa
 # http://signal.salk.edu/database/transcriptome/T-DNA.SALK
 # The +/+ strand is 'W' on SALK data and +/- is 'C'
+genome = Fasta('AT9.fa')
+chrom_sizes = {
+    'chr1': 30427671,
+    'chr2': 19698289,
+    'chr3': 23459830,
+    'chr4': 18585056,
+    'chr5': 26975502,
+    'chrM':	366924,
+    'chrC':	154478
+}
 
-def load_data(filename):
-    f = open(filename, 'r')
+primer3_seq_args = {
+    'SEQUENCE_ID': 'T-DNA',
+    'SEQUENCE_TEMPLATE': '',
+    'SEQUENCE_PRIMER_PAIR_OK_REGION_LIST': [0, 200, 1100, 200]
+}
+primer3_primer_args = {
+    'PRIMER_TASK': 'generic',
+    'PRIMER_NUM_RETURN': 1,
+    'PRIMER_EXPLAIN_FLAG': 0,
+    'PRIMER_OPT_SIZE': 21,
+    'PRIMER_MIN_SIZE': 18,
+    'PRIMER_MAX_SIZE': 28,
+    'PRIMER_OPT_TM': 56.5,
+    'PRIMER_MIN_TM': 51.0,
+    'PRIMER_MAX_TM': 61.0,
+    'PRIMER_MIN_GC': 20.0,
+    'PRIMER_MAX_GC': 80.0,
+    'PRIMER_MAX_POLY_X': 100,
+    'PRIMER_MAX_NS_ACCEPTED': 0,
+    'PRIMER_MAX_SELF_ANY': 12,
+    'PRIMER_MAX_SELF_END': 8,
+    'PRIMER_PAIR_MAX_COMPL_ANY': 12,
+    'PRIMER_PAIR_MAX_COMPL_END': 8,
+    'PRIMER_PRODUCT_SIZE_RANGE': [900, 1300],
+    'PRIMER_GC_CLAMP': 1,
+    'PRIMER_THERMODYNAMIC_TEMPLATE_ALIGNMENT': 1,
+    'PRIMER_MAX_TEMPLATE_MISPRIMING_TH': 46
+}
+sequence_length_defs = {
+    'maxN': 300,
+    'ext5': 300,
+    'ext3': 300,
+    'p_zone': 200
+}
+
+def load_data(filenames):
+    assert type(filenames) == list, "Filenames must be in the form of a list"
     records = {}
-    for line in f:
-        s_line = line.strip('\n').split('\t')
-        stock_name = s_line[0].split('.')[0]
-        poly_name = s_line[0]
-        poly_chr = s_line[1].split(':')[0]
-        poly_chr = poly_chr[3:]
-        poly_locs = s_line[3].split(',')[0]
-        poly_start = poly_locs.split('/')[1].split('-')[0]
-        poly_end = poly_locs.split('/')[1].split('-')[1]
-        orientation = s_line[3].split('/')[0]
-        # load into dict of dicts object
-        if stock_name in records:
-            records[stock_name][poly_name] = {'chr': poly_chr, 'orientation': orientation, 'start': poly_start, 'end': poly_end}
-        else:
-            records[stock_name] = {poly_name: {'chr': poly_chr, 'orientation': orientation, 'start': poly_start, 'end': poly_end}}
+    for fname in filenames:
+        f = open(fname, 'r')
+        for line in f:
+            s_line = line.strip('\n').split('\t')
+            stock_name = s_line[0].split('.')[0]
+            poly_name = s_line[0]
+            poly_chr = s_line[1].split(':')[0]
+            poly_chr = poly_chr[3:]
+            poly_locs = s_line[3].split(',')[0]
+            poly_start = poly_locs.split('/')[1].split('-')[0]
+            poly_end = poly_locs.split('/')[1].split('-')[1]
+            orientation = s_line[3].split('/')[0]
+            # load into dict of dicts object
+            if stock_name in records and poly_name in records[stock_name]:
+                records[stock_name][poly_name + '.1'] = {'chr': poly_chr, 'orientation': orientation, 'start': poly_start,
+                                                  'end': poly_end}
+            elif stock_name not in records:
+                records[stock_name] = {
+                    poly_name: {'chr': poly_chr, 'orientation': orientation, 'start': poly_start, 'end': poly_end}}
+            else:
+                records[stock_name][poly_name] = {'chr': poly_chr, 'orientation': orientation, 'start': poly_start,
+                                                  'end': poly_end}
     return records
 
 
-
-db = load_data(data_filename)
-genome = Fasta('AT9.fa')
-matches = db.get('SALK_054772')
-p_first_name = list(matches.keys())[0]
-print(p_first_name)
-info = matches[p_first_name]
-name = 'chr' + info['chr']
-print(info['orientation'])
-seq = genome[name][int(info['start']):int(info['end'])]
-
-# still need to revcomp if reverse strand!
-
+#genome = Fasta('AT9.fa')
+#matches = db.get('GABI_909G12')
+#print(matches)
+# how to pass multiple matches to func multiple matches??
+#p_first_name = list(matches.keys())[0]
+#print(p_first_name)
+#info = matches[p_first_name]
+#chr = 'chr' + info['chr']
+#seq = genome[chr][int(info['start']):int(info['end'])]
 
 # upstream = maxN + Ext5 + primer_zone
 # downstream = Ext3 + primer_zone
-maxN = 300
-ext5 = 300
-ext3 = 300
-p_zone = 200
-bp_upstream = maxN + ext5 + p_zone
-bp_downstream = ext3 + p_zone
+#maxN = 300
+#ext5 = 300
+#ext3 = 300
+#p_zone = 200
+#bp_upstream = maxN + ext5 + p_zone
+#bp_downstream = ext3 + p_zone
+#if info['orientation'] == 'W':
+ #   new_start = int(info['start']) - bp_upstream
+  #  new_end = int(info['start']) + bp_downstream + 1
+   # seq = genome[chr][new_start:new_end]
+    #print(seq)
 
-if info['orientation'] == 'W':
-    new_start = int(info['start']) - bp_upstream
-    new_end = int(info['start']) + bp_downstream +1
-    seq = genome[name][new_start:new_end]
-    print(seq)
-'''default iSECT values:
-size: optimal=21 min=18 max=28
-Tm: opt=61 Min=53 Max=71
-%GC: min=20 max=80
-clamp=1
-maxN=300 ext5=300 ext3=300
-primer_zone=200
-BPos=110 (distance from LB primer to insertion site)
-'''
-print(len(str(seq)))
-primer3_seq_args = {
-        'SEQUENCE_ID': 'MH1000',
-        'SEQUENCE_TEMPLATE': str(seq),
-        #'SEQUENCE_EXCLUDED_REGION': [201,len(seq)-401],
-        'SEQUENCE_PRIMER_PAIR_OK_REGION_LIST': [0, 200, 1100, 200]
-    }
-priner3_primer_args = {
-        'PRIMER_OPT_SIZE': 21,
-        'PRIMER_MIN_SIZE': 18,
-        'PRIMER_MAX_SIZE': 28,
-        'PRIMER_OPT_TM': 56.5,
-        'PRIMER_MIN_TM': 51.0,
-        'PRIMER_MAX_TM': 61.0,
-        'PRIMER_MIN_GC': 20.0,
-        'PRIMER_MAX_GC': 80.0,
-        'PRIMER_MAX_POLY_X': 100,
-        #'PRIMER_MAX_NS_ACCEPTED': 0,
-        'PRIMER_MAX_SELF_ANY': 12,
-        'PRIMER_MAX_SELF_END': 8,
-        'PRIMER_PAIR_MAX_COMPL_ANY': 12,
-        'PRIMER_PAIR_MAX_COMPL_END': 8,
-        'PRIMER_PRODUCT_SIZE_RANGE': [1130,1140],
-        'PRIMER_GC_CLAMP': 1,
-        'PRIMER_THERMODYNAMIC_TEMPLATE_ALIGNMENT': 1,
-        'PRIMER_MAX_TEMPLATE_MISPRIMING_TH': 46
-    }
-a = designPrimers(primer3_seq_args, priner3_primer_args)
-print(type(a))
-for k,v in a.items():
-    print(k,v)
+
+def make_primers(sequence):
+    '''default iSECT values:
+    size: optimal=21 min=18 max=28
+    Tm: opt=61 Min=53 Max=71
+    %GC: min=20 max=80
+    clamp=1
+    maxN=300 ext5=300 ext3=300
+    primer_zone=200
+    BPos=110 (distance from LB primer to insertion site)
+    '''
+    primer3_seq_args['SEQUENCE_TEMPLATE'] = sequence
+    a = designPrimers(primer3_seq_args, primer3_primer_args)
+    return a
+
+def get_seq(poly_entry):
+    """
+    :param poly_entry: dict item
+    'SALK_001127.52.15.x': {'chr': '1', 'orientation': 'W', 'start': '32', 'end': '303'}
+    :return seq: pyfaidx object
+    """
+    # calculate the upstream and downstream distances based on the sequence input params
+    bp_upstream = sequence_length_defs['maxN'] + sequence_length_defs['ext5'] + sequence_length_defs['p_zone']
+    bp_downstream = sequence_length_defs['ext3'] + sequence_length_defs['p_zone']
+    total_bp = bp_upstream + bp_downstream
+    chrom = 'chr' + poly_entry['chr']
+    # logic to account for orientation of T-DNA insert
+
+    if poly_entry['orientation'] == 'W':
+        # need to handle overflow cases, should define chromsizes!
+        new_start = max(1, int(poly_entry['start']) - bp_upstream)
+        new_end = max(min(int(poly_entry['start']) + bp_downstream + 1, chrom_sizes[chrom]), total_bp + new_start)
+        seq = genome[chrom][new_start:new_end]
+    elif poly_entry['orientation'] == 'C':
+        new_start = max(1, int(poly_entry['end']) - bp_downstream)
+        new_end = max(min(int(poly_entry['end']) + bp_upstream + 1, chrom_sizes[chrom]), new_start + total_bp)
+        seq = -genome[chrom][new_start:new_end]
+    else:
+        raise ValueError("Orientation must be 'W' or 'C'!")
+    return str(seq)
+
+def batch_process(db, out_file, number_to_make=1000, batch_size=100):
+    f = open(out_file, 'a')
+    primer_write_buffer = []
+    for i in range(0, number_to_make):
+        stock_num = list(db.keys())[i]
+        for poly_name, poly_info in db[stock_num].items():
+            result = make_primers(get_seq(poly_info))
+            result['poly_name'] = poly_name
+            primer_write_buffer.append(result)
+        # write to file and clear buffer after every batch_size items
+        if i % batch_size == 0:
+            if i == 0:
+                for primer_pair in primer_write_buffer:
+                    f.write("\t".join([str(v) for v in primer_pair.values()])+'\n')
+                primer_write_buffer = []
+                print('Wrote ' + str(batch_size) + ' primers to file: ' + out_file)
+
+db = load_data(data_filenames)
+batch_process(db, 'primers.txt')
