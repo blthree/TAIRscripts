@@ -1,6 +1,5 @@
 from pyfaidx import Fasta
 from primer3.bindings import designPrimers
-from time import sleep
 
 data_filenames = ['data/T-DNA.salk.tab', 'data/T-DNA.sail.tab', 'data/T-DNA.gk.tab']
 # http://signal.salk.edu/database/transcriptome/AT9.fa
